@@ -1,0 +1,45 @@
+package com.lingsi.d30wwebview
+
+import android.annotation.SuppressLint
+import android.os.Bundle
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.appcompat.app.AppCompatActivity
+import com.lingsi.d30wwebview.bridge.AndroidRobotBridge
+import com.lingsi.d30wwebview.sdk.MockRobotSdkAdapter
+import com.lingsi.d30wwebview.safety.CommandThrottle
+import com.lingsi.d30wwebview.safety.CommandWatchdog
+import com.lingsi.d30wwebview.safety.ControlGate
+
+class MainActivity : AppCompatActivity() {
+    private lateinit var webView: WebView
+
+    @SuppressLint("SetJavaScriptEnabled")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        webView = WebView(this)
+        setContentView(webView)
+
+        webView.settings.javaScriptEnabled = true
+        webView.settings.domStorageEnabled = true
+        webView.settings.allowFileAccess = true
+        webView.settings.allowContentAccess = false
+
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url?.toString().orEmpty()
+                return !url.startsWith("file:///android_asset/")
+            }
+        }
+
+        val sdk = MockRobotSdkAdapter()
+        val gate = ControlGate()
+        val throttle = CommandThrottle(10)
+        val watchdog = CommandWatchdog(300) { sdk.stopMovement("watchdog_timeout") }
+        val bridge = AndroidRobotBridge(webView, sdk, gate, throttle, watchdog)
+
+        webView.addJavascriptInterface(bridge, "AndroidRobot")
+        webView.loadUrl("file:///android_asset/webapp/index.html")
+    }
+}
