@@ -66,6 +66,7 @@ class MainActivity : AppCompatActivity() {
         val bridge = AndroidRobotBridge(webView, sdk, gate, throttle, watchdog)
 
         webView.addJavascriptInterface(bridge, "AndroidRobot")
+        // Load hash route entry for file:// WebView compatibility
         webView.loadUrl("file:///android_asset/webapp/index.html#/")
     }
 }
